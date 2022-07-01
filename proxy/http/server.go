@@ -25,6 +25,7 @@ import (
 	"github.com/v2fly/v2ray-core/v4/common/task"
 	"github.com/v2fly/v2ray-core/v4/features/policy"
 	"github.com/v2fly/v2ray-core/v4/features/routing"
+	"github.com/v2fly/v2ray-core/v4/features/server"
 	"github.com/v2fly/v2ray-core/v4/transport/internet"
 )
 
@@ -32,6 +33,7 @@ import (
 type Server struct {
 	config        *ServerConfig
 	policyManager policy.Manager
+	server        server.Client
 }
 
 // NewServer creates a new HTTP inbound handler.
@@ -42,6 +44,9 @@ func NewServer(ctx context.Context, config *ServerConfig) (*Server, error) {
 		policyManager: v.GetFeature(policy.ManagerType()).(policy.Manager),
 	}
 
+	if v.GetFeature(server.ClientType()) != nil {
+		s.server = v.GetFeature(server.ClientType()).(server.Client)
+	}
 	return s, nil
 }
 
@@ -119,6 +124,24 @@ Start:
 		}
 	}
 
+	if inbound.User.Email == "" {
+		user, pass, ok := parseBasicAuth(request.Header.Get("Proxy-Authorization"))
+		err := s.server.CheckNormal(inbound.Tag, user, pass)
+		if !ok || err != nil {
+			newError(err).WriteToLog(session.ExportIDToError(ctx))
+			return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
+		}
+		if Tag, URate, DRate, err := s.server.Permission(inbound.Tag, user); err != nil {
+			return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
+		} else {
+			inbound.User.Tag = Tag
+			inbound.User.URate = URate
+			inbound.User.DRate = DRate
+			inbound.User.Email = user
+			s.server.BindConn(inbound.Tag, "http", inbound.User.Email, conn)
+		}
+	}
+
 	newError("request to Method [", request.Method, "] Host [", request.Host, "] with URL [", request.URL, "]").WriteToLog(session.ExportIDToError(ctx))
 	if err := conn.SetReadDeadline(time.Time{}); err != nil {
 		newError("failed to clear read deadline").Base(err).WriteToLog(session.ExportIDToError(ctx))
@@ -140,7 +163,8 @@ Start:
 		From:   conn.RemoteAddr(),
 		To:     request.URL,
 		Status: log.AccessAccepted,
-		Reason: "",
+		Reason: "http ",
+		Email:  inbound.User.Email,
 	})
 
 	if strings.EqualFold(request.Method, "CONNECT") {

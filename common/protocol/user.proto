@@ -12,6 +12,8 @@ import "common/serial/typed_message.proto";
 message User {
   uint32 level = 1;
   string email = 2;
+  uint64 urate  = 4;
+  uint64 drate  = 5;
 
   // Protocol specific account information. Must be the account proto in one of
   // the proxies.

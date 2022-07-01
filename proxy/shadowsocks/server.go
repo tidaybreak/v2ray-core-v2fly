@@ -5,6 +5,8 @@ package shadowsocks
 
 import (
 	"context"
+	"github.com/v2fly/v2ray-core/v4/app/dns"
+	"github.com/v2fly/v2ray-core/v4/features/server"
 	"time"
 
 	core "github.com/v2fly/v2ray-core/v4"
@@ -27,6 +29,7 @@ type Server struct {
 	config        *ServerConfig
 	user          *protocol.MemoryUser
 	policyManager policy.Manager
+	server        server.Client
 }
 
 // NewServer create a new Shadowsocks server.
@@ -47,6 +50,9 @@ func NewServer(ctx context.Context, config *ServerConfig) (*Server, error) {
 		policyManager: v.GetFeature(policy.ManagerType()).(policy.Manager),
 	}
 
+	if v.GetFeature(server.ClientType()) != nil {
+		s.server = v.GetFeature(server.ClientType()).(server.Client)
+	}
 	return s, nil
 }
 
@@ -80,6 +86,11 @@ func (s *Server) handlerUDPPayload(ctx context.Context, conn internet.Connection
 		}
 
 		payload := packet.Payload
+
+		if request.Port == 53 {
+			dns.ParseResponseLog(packet.Payload.Bytes(), "ss", request.User.Email, request.Address.String())
+		}
+
 		data, err := EncodeUDPPacket(request, payload.Bytes())
 		payload.Release()
 		if err != nil {
@@ -127,7 +138,7 @@ func (s *Server) handlerUDPPayload(ctx context.Context, conn internet.Connection
 					From:   inbound.Source,
 					To:     dest,
 					Status: log.AccessAccepted,
-					Reason: "",
+					Reason: "ss",
 					Email:  request.User.Email,
 				})
 			}
@@ -164,12 +175,22 @@ func (s *Server) handleConnection(ctx context.Context, conn internet.Connection,
 	}
 	inbound.User = s.user
 
+	s.server.CheckSS(inbound.Tag, inbound.User.Email, conn)
+	if Tag, URate, DRate, err := s.server.Permission(inbound.Tag, inbound.User.Email); err != nil {
+		return newError("failed to permission request from: ", conn.RemoteAddr()).Base(err)
+	} else {
+		inbound.User.Tag = Tag
+		inbound.User.URate = URate
+		inbound.User.DRate = DRate
+		s.server.BindConn(inbound.Tag, "ss", inbound.User.Email, conn)
+	}
+
 	dest := request.Destination()
 	ctx = log.ContextWithAccessMessage(ctx, &log.AccessMessage{
 		From:   conn.RemoteAddr(),
 		To:     dest,
 		Status: log.AccessAccepted,
-		Reason: "",
+		Reason: "ss",
 		Email:  request.User.Email,
 	})
 	newError("tunnelling request to ", dest).WriteToLog(session.ExportIDToError(ctx))

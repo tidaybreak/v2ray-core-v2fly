@@ -152,9 +152,30 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 	}
 
 	if user != nil && len(user.Email) > 0 {
+		var bucket *RateLimiter
 		p := d.policy.ForLevel(user.Level)
+		var urate, drate uint64
+		if user.URate > 0 {
+			urate = uint64(user.URate)
+		} else if p.Buffer.Rate != 0 {
+			urate = p.Buffer.Rate
+		}
+		if user.DRate > 0 {
+			drate = uint64(user.DRate)
+		} else if p.Buffer.Rate != 0 {
+			drate = p.Buffer.Rate
+		}
+		if urate > 0 {
+			bucket = NewRateLimiter(int64(urate) * 1024)
+			inboundLink.Writer = RateWriter(inboundLink.Writer, bucket)
+		}
+		if drate > 0 {
+			bucket = NewRateLimiter(int64(drate) * 1024)
+			outboundLink.Writer = RateWriter(outboundLink.Writer, bucket)
+		}
+		//p := d.policy.ForLevel(user.Level)
 		if p.Stats.UserUplink {
-			name := "user>>>" + user.Email + ">>>traffic>>>uplink"
+			name := "inbound>>>" + sessionInbound.Tag + "user>>>" + user.Email + ">>>traffic>>>uplink"
 			if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
 				inboundLink.Writer = &SizeStatWriter{
 					Counter: c,
@@ -163,7 +184,7 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 			}
 		}
 		if p.Stats.UserDownlink {
-			name := "user>>>" + user.Email + ">>>traffic>>>downlink"
+			name := "inbound>>>" + sessionInbound.Tag + "user>>>" + user.Email + ">>>traffic>>>downlink"
 			if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
 				outboundLink.Writer = &SizeStatWriter{
 					Counter: c,
@@ -310,17 +331,35 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 			return
 		}
 	} else if d.router != nil {
-		if route, err := d.router.PickRoute(routing_session.AsRoutingContext(ctx)); err == nil {
-			tag := route.GetOutboundTag()
-			if h := d.ohm.GetHandler(tag); h != nil {
-				newError("taking detour [", tag, "] for [", destination, "]").WriteToLog(session.ExportIDToError(ctx))
+		sessionInbound := session.InboundFromContext(ctx)
+		var user *protocol.MemoryUser
+		if sessionInbound != nil {
+			user = sessionInbound.User
+		}
+		if user != nil && user.Tag != "" {
+			if h := d.ohm.GetHandler(user.Tag); h != nil {
+				newError("taking detour [", user.Tag, "] for [", destination, "]").WriteToLog(session.ExportIDToError(ctx))
 				handler = h
 			} else {
-				newError("non existing tag: ", tag).AtWarning().WriteToLog(session.ExportIDToError(ctx))
+				newError("non existing tag: ", user.Tag).AtWarning().WriteToLog(session.ExportIDToError(ctx))
+
+				d.ohm.AddSimpleHandler(ctx, user.Tag, user.Tag)
+				handler = d.ohm.GetHandler(user.Tag)
 			}
 		} else {
-			newError("default route for ", destination).WriteToLog(session.ExportIDToError(ctx))
+			if route, err := d.router.PickRoute(routing_session.AsRoutingContext(ctx)); err == nil {
+				tag := route.GetOutboundTag()
+				if h := d.ohm.GetHandler(tag); h != nil {
+					newError("taking detour [", tag, "] for [", destination, "]").WriteToLog(session.ExportIDToError(ctx))
+					handler = h
+				} else {
+					newError("non existing tag: ", tag).AtWarning().WriteToLog(session.ExportIDToError(ctx))
+				}
+			} else {
+				newError("default route for ", destination).WriteToLog(session.ExportIDToError(ctx))
+			}
 		}
+
 	}
 
 	if handler == nil {

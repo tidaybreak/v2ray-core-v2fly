@@ -125,6 +125,49 @@ func NewHandler(ctx context.Context, config *core.OutboundHandlerConfig) (outbou
 	return h, nil
 }
 
+// NewSimpleOutHandler create a new Handler based on the given configuration.
+func NewSimpleOutHandler(ctx context.Context, defHandler outbound.Handler, tag, ip string) (outbound.Handler, error) {
+	v := core.MustFromContext(ctx)
+	uplinkCounter, downlinkCounter := getStatCounter(v, tag)
+	h := &Handler{
+		tag:             tag,
+		outboundManager: v.GetFeature(outbound.ManagerType()).(outbound.Manager),
+		uplinkCounter:   uplinkCounter,
+		downlinkCounter: downlinkCounter,
+	}
+
+	via := net.NewIPOrDomain(net.ParseAddress(ip))
+	senderSettings := &proxyman.SenderConfig{
+		Via: via,
+	}
+	h.senderSettings = senderSettings
+
+	//mss := &internet.MemoryStreamConfig{
+	//	ProtocolName: "tcp",
+	//	SecurityType: "",
+	//}
+	//h.streamSettings = mss
+
+	//fhandlerConfig := &freedom.Config{
+	//	DomainStrategy: freedom.Config_USE_IP,
+	//}
+	//policy := v.GetFeature(policy.ManagerType()).(policy.Manager)
+	//fhandler := &freedom.Handler{}
+
+	//fhandler.Init(fhandlerConfig, policy, d)
+	//var newInterface1 interface{}
+	//h2 := &Handler{}
+	//defhandler = h2
+	defH, ok := (defHandler).(*Handler)
+	if !ok {
+		return nil, newError("not an outbound handler")
+	}
+	h.streamSettings = defH.streamSettings
+	h.proxy = defH.proxy
+
+	return h, nil
+}
+
 // Tag implements outbound.Handler.
 func (h *Handler) Tag() string {
 	return h.tag
@@ -198,6 +241,13 @@ func (h *Handler) Dial(ctx context.Context, dest net.Destination) (internet.Conn
 				ctx = session.ContextWithOutbound(ctx, outbound)
 			}
 			outbound.Gateway = h.senderSettings.Via.AsAddress()
+
+			inbound := session.InboundFromContext(ctx)
+			if inbound != nil {
+				if "0.0.0.0" == outbound.Gateway.String() {
+					outbound.Gateway = inbound.Local.Address
+				}
+			}
 		}
 	}
 

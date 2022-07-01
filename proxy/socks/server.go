@@ -21,6 +21,7 @@ import (
 	"github.com/v2fly/v2ray-core/v4/features"
 	"github.com/v2fly/v2ray-core/v4/features/policy"
 	"github.com/v2fly/v2ray-core/v4/features/routing"
+	"github.com/v2fly/v2ray-core/v4/features/server"
 	"github.com/v2fly/v2ray-core/v4/transport/internet"
 	"github.com/v2fly/v2ray-core/v4/transport/internet/udp"
 )
@@ -29,6 +30,7 @@ import (
 type Server struct {
 	config        *ServerConfig
 	policyManager policy.Manager
+	server        server.Client
 }
 
 // NewServer creates a new Server object.
@@ -38,6 +40,11 @@ func NewServer(ctx context.Context, config *ServerConfig) (*Server, error) {
 		config:        config,
 		policyManager: v.GetFeature(policy.ManagerType()).(policy.Manager),
 	}
+
+	if v.GetFeature(server.ClientType()) != nil {
+		s.server = v.GetFeature(server.ClientType()).(server.Client)
+	}
+
 	return s, nil
 }
 
@@ -96,6 +103,8 @@ func (s *Server) processTCP(ctx context.Context, conn internet.Connection, dispa
 		address:       inbound.Gateway.Address,
 		port:          inbound.Gateway.Port,
 		clientAddress: inbound.Source.Address,
+		server:        s.server,
+		inboundTag:    inbound.Tag,
 	}
 
 	reader := &buf.BufferedReader{Reader: buf.NewReader(conn)}
@@ -113,6 +122,14 @@ func (s *Server) processTCP(ctx context.Context, conn internet.Connection, dispa
 	}
 	if request.User != nil {
 		inbound.User.Email = request.User.Email
+		if Tag, URate, DRate, err := svrSession.server.Permission(svrSession.inboundTag, request.User.Email); err != nil {
+			return newError("server permission deny").Base(err)
+		} else {
+			inbound.User.Tag = Tag
+			inbound.User.URate = URate
+			inbound.User.DRate = DRate
+		}
+		svrSession.server.BindConn(svrSession.inboundTag, "socks", request.User.Email, conn)
 	}
 
 	if err := conn.SetReadDeadline(time.Time{}); err != nil {
@@ -127,7 +144,8 @@ func (s *Server) processTCP(ctx context.Context, conn internet.Connection, dispa
 				From:   inbound.Source,
 				To:     dest,
 				Status: log.AccessAccepted,
-				Reason: "",
+				Reason: "socks",
+				Email:  inbound.User.Email,
 			})
 		}
 
@@ -238,7 +256,8 @@ func (s *Server) handleUDPPayload(ctx context.Context, conn internet.Connection,
 					From:   inbound.Source,
 					To:     request.Destination(),
 					Status: log.AccessAccepted,
-					Reason: "",
+					Reason: "socks",
+					Email:  inbound.User.Email,
 				})
 			}
 

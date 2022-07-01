@@ -7,6 +7,8 @@ package inbound
 
 import (
 	"context"
+	"github.com/v2fly/v2ray-core/v4/app/dns"
+	"github.com/v2fly/v2ray-core/v4/features/server"
 	"io"
 	"strings"
 	"sync"
@@ -111,6 +113,7 @@ type Handler struct {
 	detours               *DetourConfig
 	sessionHistory        *encoding.SessionHistory
 	secure                bool
+	server                server.Client
 }
 
 // New creates a new VMess inbound handler.
@@ -124,6 +127,10 @@ func New(ctx context.Context, config *Config) (*Handler, error) {
 		usersByEmail:          newUserByEmail(config.GetDefaultValue()),
 		sessionHistory:        encoding.NewSessionHistory(),
 		secure:                config.SecureEncryptionOnly,
+	}
+
+	if v.GetFeature(server.ClientType()) != nil {
+		handler.server = v.GetFeature(server.ClientType()).(server.Client)
 	}
 
 	for _, user := range config.User {
@@ -191,6 +198,12 @@ func transferResponse(timer signal.ActivityUpdater, session *encoding.ServerSess
 		data, err := input.ReadMultiBuffer()
 		if err != nil {
 			return err
+		}
+
+		if request.Port == 53 {
+			if len(data) > 0 {
+				dns.ParseResponseLog(data[0].Bytes(), "vmess", request.User.Email, request.Address.String())
+			}
 		}
 
 		if err := bodyWriter.WriteMultiBuffer(data); err != nil {
@@ -261,7 +274,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection i
 			From:   connection.RemoteAddr(),
 			To:     request.Destination(),
 			Status: log.AccessAccepted,
-			Reason: "",
+			Reason: "vmess",
 			Email:  request.User.Email,
 		})
 	}
@@ -277,6 +290,20 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection i
 		panic("no inbound metadata")
 	}
 	inbound.User = request.User
+
+	_, err = h.server.CheckVmess(inbound.Tag, inbound.User.Email, connection)
+	if err != nil {
+		newError(err).WriteToLog(session.ExportIDToError(ctx))
+		return err
+	}
+	if Tag, URate, DRate, err := h.server.Permission(inbound.Tag, inbound.User.Email); err != nil {
+		return newError("no permission")
+	} else {
+		inbound.User.Tag = Tag
+		inbound.User.URate = URate
+		inbound.User.DRate = DRate
+		h.server.BindConn(inbound.Tag, "ss", inbound.User.Email, connection)
+	}
 
 	sessionPolicy = h.policyManager.ForLevel(request.User.Level)
 

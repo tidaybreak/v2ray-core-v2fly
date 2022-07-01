@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package v2ray.core.app.server;
+option csharp_namespace = "V2Ray.Core.App.Server";
+option go_package = "github.com/v2fly/v2ray-core/v4/app/server";
+option java_package = "com.v2ray.core.app.Server";
+option java_multiple_files = true;
+
+//import "common/net/address.proto";
+import "common/net/destination.proto";
+//import "app/router/config.proto";
+
+message Account {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthServer {
+  string type = 1;
+  string auth_url = 2;
+  int32  auth_expire = 3;
+  string traffic_url = 4;
+  int32 traffic_interval = 5;
+  repeated string inbound_tag = 6;
+
+  v2ray.core.common.net.Endpoint address = 7;
+}
+
+message Config {
+  repeated AuthServer auth_server = 1;
+
+  map<string, string> accounts = 2;
+
+  int32 interval = 3;
+  string api_user = 6;
+  string api_traffic = 7;
+  int32 ss_id = 8;
+  map<string, int32> tag_id = 9;
+  map<string, int32> tag_vmess_id = 10;
+  string tag = 11;
+}

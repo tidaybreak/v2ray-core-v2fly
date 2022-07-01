@@ -36,4 +36,7 @@ type MemoryUser struct {
 	Account Account
 	Email   string
 	Level   uint32
+	Tag     string
+	URate   uint32
+	DRate   uint32
 }

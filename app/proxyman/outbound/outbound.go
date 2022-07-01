@@ -4,6 +4,7 @@ package outbound
 
 import (
 	"context"
+	"github.com/v2fly/v2ray-core/v4/common/net"
 	"strings"
 	"sync"
 
@@ -108,6 +109,41 @@ func (m *Manager) AddHandler(ctx context.Context, handler outbound.Handler) erro
 	}
 
 	tag := handler.Tag()
+	if len(tag) > 0 {
+		m.taggedHandler[tag] = handler
+	} else {
+		m.untaggedHandlers = append(m.untaggedHandlers, handler)
+	}
+
+	if m.running {
+		return handler.Start()
+	}
+
+	return nil
+}
+
+func (m *Manager) AddSimpleHandler(ctx context.Context, tag, ip string) error {
+	addr := net.ParseAddress(ip)
+	if addr == nil {
+		return nil
+	}
+
+	m.access.Lock()
+	defer m.access.Unlock()
+
+	if _, found := m.taggedHandler[tag]; found {
+		return nil
+	}
+
+	if m.defaultHandler == nil {
+		return nil
+	}
+
+	handler, err := NewSimpleOutHandler(ctx, m.defaultHandler, tag, ip)
+	if err != nil {
+		return err
+	}
+
 	if len(tag) > 0 {
 		m.taggedHandler[tag] = handler
 	} else {

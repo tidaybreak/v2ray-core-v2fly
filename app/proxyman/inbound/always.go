@@ -2,6 +2,7 @@ package inbound
 
 import (
 	"context"
+	"github.com/v2fly/v2ray-core/v4/features/server"
 
 	core "github.com/v2fly/v2ray-core/v4"
 	"github.com/v2fly/v2ray-core/v4/app/proxyman"
@@ -122,6 +123,9 @@ func NewAlwaysOnInboundHandler(ctx context.Context, tag string, receiverConfig *
 					uplinkCounter:   uplinkCounter,
 					downlinkCounter: downlinkCounter,
 					ctx:             ctx,
+				}
+				if core.MustFromContext(ctx).GetFeature(server.ClientType()) != nil {
+					worker.account = core.MustFromContext(ctx).GetFeature(server.ClientType()).(server.Client)
 				}
 				h.workers = append(h.workers, worker)
 			}

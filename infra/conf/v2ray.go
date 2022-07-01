@@ -2,6 +2,7 @@ package conf
 
 import (
 	"encoding/json"
+	"github.com/v2fly/v2ray-core/v4/common/net"
 	"log"
 	"os"
 	"strings"
@@ -270,9 +271,10 @@ func (c *OutboundDetourConfig) Build() (*core.OutboundHandlerConfig, error) {
 	if c.SendThrough != nil {
 		address := c.SendThrough
 		if address.Family().IsDomain() {
-			return nil, newError("unable to send through: " + address.String())
+			//return nil, newError("unable to send through: " + address.String())
 		}
-		senderSettings.Via = address.Build()
+		//senderSettings.Via = address.Build()
+		senderSettings.Via = net.NewIPOrInterface(address)
 	}
 
 	if c.StreamSetting != nil {
@@ -357,6 +359,7 @@ type Config struct {
 	FakeDNS          *FakeDNSConfig          `json:"fakeDns"`
 	BrowserForwarder *BrowserForwarderConfig `json:"browserForwarder"`
 	Observatory      *ObservatoryConfig      `json:"observatory"`
+	ServerConfig     *ServerConfig           `json:"server"`
 
 	Services map[string]*json.RawMessage `json:"services"`
 }
@@ -395,6 +398,9 @@ func (c *Config) Override(o *Config, fn string) {
 	}
 	if o.DNSConfig != nil {
 		c.DNSConfig = o.DNSConfig
+	}
+	if o.ServerConfig != nil {
+		c.ServerConfig = o.ServerConfig
 	}
 	if o.Transport != nil {
 		c.Transport = o.Transport
@@ -547,6 +553,14 @@ func (c *Config) Build() (*core.Config, error) {
 			return nil, newError("failed to parse DNS config").Base(err)
 		}
 		config.App = append(config.App, serial.ToTypedMessage(dnsApp))
+	}
+
+	if c.ServerConfig != nil {
+		accApp, err := c.ServerConfig.Build()
+		if err != nil {
+			return nil, newError("failed to parse Account config").Base(err)
+		}
+		config.App = append(config.App, serial.ToTypedMessage(accApp))
 	}
 
 	if c.Policy != nil {

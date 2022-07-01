@@ -33,6 +33,8 @@ type Manager interface {
 	// AddHandler adds a handler into this outbound.Manager.
 	AddHandler(ctx context.Context, handler Handler) error
 
+	AddSimpleHandler(ctx context.Context, tag, ip string) error
+
 	// RemoveHandler removes a handler from outbound.Manager.
 	RemoveHandler(ctx context.Context, tag string) error
 }

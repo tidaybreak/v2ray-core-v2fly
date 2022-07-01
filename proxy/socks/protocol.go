@@ -11,6 +11,7 @@ import (
 	"github.com/v2fly/v2ray-core/v4/common/buf"
 	"github.com/v2fly/v2ray-core/v4/common/net"
 	"github.com/v2fly/v2ray-core/v4/common/protocol"
+	"github.com/v2fly/v2ray-core/v4/features/server"
 )
 
 const (
@@ -46,6 +47,9 @@ type ServerSession struct {
 	address       net.Address
 	port          net.Port
 	clientAddress net.Address
+
+	server     server.Client
+	inboundTag string
 }
 
 func (s *ServerSession) handshake4(cmd byte, reader io.Reader, writer io.Writer) (*protocol.RequestHeader, error) {
@@ -125,9 +129,11 @@ func (s *ServerSession) auth5(nMethod byte, reader io.Reader, writer io.Writer) 
 			return "", newError("failed to read username and password for authentication").Base(err)
 		}
 
-		if !s.config.HasAccount(username, password) {
-			writeSocks5AuthenticationResponse(writer, 0x01, 0xFF)
-			return "", newError("invalid username or password")
+		if err := s.server.CheckNormal(s.inboundTag, username, password); err != nil {
+			if !s.config.HasAccount(username, password) {
+				writeSocks5AuthenticationResponse(writer, 0x01, 0xFF) // nolint: errcheck
+				return "", newError("invalid username:", username, " or password:", password)
+			}
 		}
 
 		if err := writeSocks5AuthenticationResponse(writer, 0x01, 0x00); err != nil {

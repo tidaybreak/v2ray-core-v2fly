@@ -2,7 +2,7 @@ export PATH=$PATH:/home/ti/dev_data/go1.17/bin
 export GOROOT=/home/ti/dev_data/go1.17
 export GOPATH=/data/ofidc/gopath
 
-cd /home/ti/code/v2fly.org/v2ray-core/main
+cd /home/ti/code/v2ray-core-v2fly/main
 env CGO_ENABLED=0 go build -o ../v2ray -ldflags "-s -w"
 env CGO_ENABLED=0 go build -o /home/data/docker-volume/v2ray/bin/v2ray -ldflags "-s -w"
 
@@ -21,10 +21,10 @@ env CGO_ENABLED=0 go build -o /data/test/bin/v2ray -ldflags "-s -w"
 
 
 # protoc
-cd /home/ti/project/v2ray.com/core
-/home/ti/project/v2ray.com/core/protoc/bin/protoc --proto_path=/home/ti/project/v2ray.com/core --go_out=../../ /home/ti/project/v2ray.com/core/app/policy/config.proto
-/home/ti/project/v2ray.com/core/protoc/bin/protoc --proto_path=/home/ti/project/v2ray.com/core --go_out=../../ /home/ti/project/v2ray.com/core/app/server/config.proto
-/home/ti/project/v2ray.com/core/protoc/bin/protoc --proto_path=/home/ti/project/v2ray.com/core --go_out=../../ /home/ti/project/v2ray.com/core/common/protocol/user.proto
+cd /home/ti/code/v2ray-core-v2fly
+/home/ti/code/v2ray-core-v2fly/protoc/bin/protoc --proto_path=/home/ti/code/v2ray-core-v2fly --go_out=/tmp /home/ti/code/v2ray-core-v2fly/app/policy/config.proto
+/home/ti/code/v2ray-core-v2fly/protoc/bin/protoc --proto_path=/home/ti/code/v2ray-core-v2fly --go_out=/tmp /home/ti/code/v2ray-core-v2fly/common/protocol/user.proto
+/home/ti/code/v2ray-core-v2fly/protoc/bin/protoc --proto_path=/home/ti/code/v2ray-core-v2fly --go_out=/tmp /home/ti/code/v2ray-core-v2fly/app/server/config.proto
 
 
 

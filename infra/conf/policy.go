@@ -12,6 +12,8 @@ type Policy struct {
 	StatsUserUplink   bool    `json:"statsUserUplink"`
 	StatsUserDownlink bool    `json:"statsUserDownlink"`
 	BufferSize        *int32  `json:"bufferSize"`
+	Rate              *uint64 `json:"rate"`
+	Session           *uint64 `json:"session"`
 }
 
 func (t *Policy) Build() (*policy.Policy, error) {
@@ -29,6 +31,10 @@ func (t *Policy) Build() (*policy.Policy, error) {
 		config.DownlinkOnly = &policy.Second{Value: *t.DownlinkOnly}
 	}
 
+	var bs int32
+	var rate uint64
+	var session uint64
+
 	p := &policy.Policy{
 		Timeout: config,
 		Stats: &policy.Policy_Stats{
@@ -38,12 +44,22 @@ func (t *Policy) Build() (*policy.Policy, error) {
 	}
 
 	if t.BufferSize != nil {
-		bs := int32(-1)
+		bs = int32(-1)
 		if *t.BufferSize >= 0 {
 			bs = (*t.BufferSize) * 1024
 		}
+
+		if t.Rate != nil {
+			rate = *t.Rate
+		}
+		if t.Session != nil {
+			session = *t.Session
+		}
+
 		p.Buffer = &policy.Policy_Buffer{
 			Connection: bs,
+			Rate:       rate,
+			Session:    session,
 		}
 	}
 

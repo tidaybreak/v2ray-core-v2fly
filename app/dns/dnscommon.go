@@ -35,6 +35,7 @@ type IPRecord struct {
 	IP     []net.Address
 	Expire time.Time
 	RCode  dnsmessage.RCode
+	NameIP map[string][]net.Address
 }
 
 func (r *IPRecord) getIPs() ([]net.Address, error) {
@@ -182,6 +183,7 @@ func parseResponse(payload []byte) (*IPRecord, error) {
 		ReqID:  h.ID,
 		RCode:  h.RCode,
 		Expire: now.Add(time.Second * 600),
+		NameIP: make(map[string][]net.Address),
 	}
 
 L:
@@ -211,6 +213,7 @@ L:
 				break L
 			}
 			ipRecord.IP = append(ipRecord.IP, net.IPAddress(ans.A[:]))
+			ipRecord.NameIP[ah.Name.String()] = ipRecord.IP
 		case dnsmessage.TypeAAAA:
 			ans, err := parser.AAAAResource()
 			if err != nil {
@@ -218,6 +221,7 @@ L:
 				break L
 			}
 			ipRecord.IP = append(ipRecord.IP, net.IPAddress(ans.AAAA[:]))
+			ipRecord.NameIP[ah.Name.String()] = ipRecord.IP
 		default:
 			if err := parser.SkipAnswer(); err != nil {
 				newError("failed to skip answer").Base(err).WriteToLog()
@@ -228,4 +232,14 @@ L:
 	}
 
 	return ipRecord, nil
+}
+
+func ParseResponseLog(payload []byte, proto, email, dns string) error {
+	ipRec, err := parseResponse(payload)
+	if err == nil {
+		for Name, IPS := range ipRec.NameIP {
+			newError(proto, " client initiative dns query email:", email, " dns:", dns, " domain:", Name, " -> ", IPS).Other().WriteToLog()
+		}
+	}
+	return nil
 }

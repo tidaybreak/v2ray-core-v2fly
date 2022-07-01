@@ -39,6 +39,8 @@ type Inbound struct {
 	Source net.Destination
 	// Gateway address
 	Gateway net.Destination
+	// 连接时的地址，多ip时
+	Local net.Destination
 	// Tag of the inbound proxy that handles the connection.
 	Tag string
 	// User is the user that authencates for the inbound. May be nil if the protocol allows anounymous traffic.

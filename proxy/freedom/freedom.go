@@ -82,6 +82,12 @@ func (h *Handler) resolveIP(ctx context.Context, domain string, localAddr net.Ad
 	if err != nil {
 		newError("failed to get IP address for domain ", domain).Base(err).WriteToLog(session.ExportIDToError(ctx))
 	}
+
+	inbound := session.InboundFromContext(ctx)
+	if inbound != nil && inbound.User != nil {
+		newError("freedom dns query email:", inbound.User.Email, " domain:", domain, " -> ", ips).AtDebug().WriteToLog()
+	}
+
 	if len(ips) == 0 {
 		return nil
 	}

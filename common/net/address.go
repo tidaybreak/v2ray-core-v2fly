@@ -209,3 +209,31 @@ func NewIPOrDomain(addr Address) *IPOrDomain {
 		panic("Unknown Address type.")
 	}
 }
+
+// NewIPOrInterface translates Address to IPOrDomain
+func NewIPOrInterface(addr Address) *IPOrDomain {
+	switch addr.Family() {
+	case AddressFamilyDomain:
+		ief, err := net.InterfaceByName(addr.String())
+		if err == nil {
+			addrs, err := ief.Addrs()
+			if err == nil {
+				return &IPOrDomain{
+					Address: &IPOrDomain_Ip{
+						Ip: addrs[0].(*net.IPNet).IP,
+					},
+				}
+			}
+		}
+
+		panic("Unknown Address type.")
+	case AddressFamilyIPv4, AddressFamilyIPv6:
+		return &IPOrDomain{
+			Address: &IPOrDomain_Ip{
+				Ip: addr.IP(),
+			},
+		}
+	default:
+		panic("Unknown Address type.")
+	}
+}

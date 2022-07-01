@@ -15,6 +15,7 @@ import (
 	"github.com/v2fly/v2ray-core/v4/common/signal/done"
 	"github.com/v2fly/v2ray-core/v4/common/task"
 	"github.com/v2fly/v2ray-core/v4/features/routing"
+	"github.com/v2fly/v2ray-core/v4/features/server"
 	"github.com/v2fly/v2ray-core/v4/features/stats"
 	"github.com/v2fly/v2ray-core/v4/proxy"
 	"github.com/v2fly/v2ray-core/v4/transport/internet"
@@ -41,6 +42,7 @@ type tcpWorker struct {
 	sniffingConfig  *proxyman.SniffingConfig
 	uplinkCounter   stats.Counter
 	downlinkCounter stats.Counter
+	account         server.Client
 
 	hub internet.Listener
 
@@ -81,6 +83,7 @@ func (w *tcpWorker) callback(conn internet.Connection) {
 	ctx = session.ContextWithInbound(ctx, &session.Inbound{
 		Source:  net.DestinationFromAddr(conn.RemoteAddr()),
 		Gateway: net.TCPDestination(w.address, w.port),
+		Local:   net.DestinationFromAddr(conn.LocalAddr()),
 		Tag:     w.tag,
 	})
 	content := new(session.Content)
@@ -97,12 +100,28 @@ func (w *tcpWorker) callback(conn internet.Connection) {
 			WriteCounter: w.downlinkCounter,
 		}
 	}
+
+	remoteAddr := conn.RemoteAddr().Network() + ":" + conn.RemoteAddr().String()
+	newError("open: ", conn.LocalAddr(), " ", remoteAddr).AtDebug().WriteToLog()
+
 	if err := w.proxy.Process(ctx, net.Network_TCP, conn, w.dispatcher); err != nil {
 		newError("connection ends").Base(err).WriteToLog(session.ExportIDToError(ctx))
 	}
 	cancel()
 	if err := conn.Close(); err != nil {
 		newError("failed to close connection").Base(err).WriteToLog(session.ExportIDToError(ctx))
+	}
+	newError("close: ", remoteAddr).AtDebug().WriteToLog()
+
+	inbound := session.InboundFromContext(ctx)
+	if w.account != nil && inbound != nil && inbound.User != nil {
+		if inbound.User.Email != "" {
+			w.account.CloseConn(inbound.Tag, inbound.User.Email, remoteAddr)
+		} else {
+			newError("close conn null email ", remoteAddr).AtDebug().WriteToLog()
+		}
+	} else {
+
 	}
 }
 

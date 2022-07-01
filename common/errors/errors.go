@@ -102,6 +102,10 @@ func (err *Error) Severity() log.Severity {
 	return err.severity
 }
 
+func (err *Error) Other() *Error {
+	return err.atSeverity(log.Severity_Unknown)
+}
+
 // AtDebug sets the severity to debug.
 func (err *Error) AtDebug() *Error {
 	return err.atSeverity(log.Severity_Debug)
