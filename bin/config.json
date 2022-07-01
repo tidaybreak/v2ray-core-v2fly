@@ -1,0 +1,123 @@
+{
+    "stats": {},
+    "api": {
+        "tag": "api",
+        "services": [
+            "HandlerService",
+            "StatsService"
+        ]
+    },
+    "log": {
+        "loglevel": "debug",
+        "access": "/var/log/v2ray/access.log",
+        "error": ""
+    },
+    "policy": {
+        "levels": {
+            "0": {
+                "statsUserUplink": true,
+                "statsUserDownlink": true,
+                "rate": 0,
+                "session": 0
+            }
+        },
+        "system": {
+            "statsInboundUplink": true,
+            "statsInboundDownlink": true
+        }
+    },
+    "dns": {
+        "hosts": {
+        },
+        "servers": [
+            "8.8.8.8",
+            "8.8.4.4"
+        ]
+    },
+    "server": {
+        "interval": 20,
+        "tagId": {
+            "inbound-http": 2,
+            "inbound-socks": 5
+        },
+        "tagVmessId": {
+            "inbound-vmess": 1
+        },
+        "ssId": 13,
+        "apiUser": "http://proxy.wy2.com/api/get_change_user/?token=youowntoken",
+        "apiTraffic": "http://proxy.wy2.com/api/update_traffic/?token=youowntoken"
+    },
+    "inbounds": [
+        {
+            "protocol": "socks",
+            "listen": "0.0.0.0",
+            "port": 1091,
+            "settings": {
+                "auth": "password",
+                "accounts": [
+                    {"user": "wengzt2@ofidc.com", "pass": "ti2751231"}
+                ],
+                "udp": true,
+                "ip": "121.46.18.120",
+                "userLevel": 0
+            },
+            "tag": "inbound-socks"
+        },
+        {
+            "tag": "inbound-http",
+            "listen": "0.0.0.0",
+            "port": 1090,
+            "protocol": "http",
+            "settings": {
+            },
+            "sniffing": {},
+            "streamSettings": {
+                "network": "tcp",
+                "security": "none",
+                "tcpSettings": {
+                    "header": {
+                        "type": "none"
+                    }
+                }
+            }
+        },
+        {
+            "tag": "vmess",
+            "port": 1092,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "27848739-7e62-4138-9fd3-098a63964b6b",
+                        "alterId": 4
+                    }
+                ]
+            },
+            "tag": "inbound-vmess"
+        },
+        {
+            "tag": "api",
+            "listen": "127.0.0.1",
+            "port": 9091,
+            "protocol": "dokodemo-door",
+            "settings": {
+                "address": "127.0.0.1"
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "sendThrough": "172.18.0.10",
+            "protocol": "freedom",
+            "tag": "out",
+            "settings": {
+                "domainStrategy": "useip"
+            }
+        }
+    ],
+    "routing": {
+        "rules": [
+        ],
+        "strategy": "rules"
+    }
+}

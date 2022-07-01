@@ -1,44 +1,44 @@
-<div>
-  <img width="190" height="210" align="left" src="https://raw.githubusercontent.com/v2fly/v2fly-github-io/master/docs/.vuepress/public/readme-logo.png" alt="V2Ray"/>
-  <br>
-  <h1>Project V</h1>
-  <p>Project V is a set of network tools that helps you to build your own computer network. It secures your network connections and thus protects your privacy.</p>
-</div>
+export PATH=$PATH:/home/ti/dev_data/go1.17/bin
+export GOROOT=/home/ti/dev_data/go1.17
+export GOPATH=/data/ofidc/gopath
 
-[![GitHub Test Badge](https://github.com/v2fly/v2ray-core/workflows/Test/badge.svg)](https://github.com/v2fly/v2ray-core/actions)
-[![codecov.io](https://codecov.io/gh/v2fly/v2ray-core/branch/master/graph/badge.svg?branch=master)](https://codecov.io/gh/v2fly/v2ray-core?branch=master)
-[![codebeat](https://goreportcard.com/badge/github.com/v2fly/v2ray-core)](https://goreportcard.com/report/github.com/v2fly/v2ray-core)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e150b7ede2114388921943bf23d95161)](https://www.codacy.com/gh/v2fly/v2ray-core/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=v2fly/v2ray-core&amp;utm_campaign=Badge_Grade)
-[![Downloads](https://img.shields.io/github/downloads/v2fly/v2ray-core/total.svg)](https://github.com/v2fly/v2ray-core/releases/latest)
+cd /home/ti/code/v2fly.org/v2ray-core/main
+env CGO_ENABLED=0 go build -o ../v2ray -ldflags "-s -w"
+env CGO_ENABLED=0 go build -o /home/data/docker-volume/v2ray/bin/v2ray -ldflags "-s -w"
 
-## Related Links
+cd /home/ti/code/v2fly.org/v2ray-core/infra/control/main
+env CGO_ENABLED=0 go build -o /tmp/v2ctl -tags confonly -ldflags "-s -w"
+env CGO_ENABLED=0 go build -o ../../../v2ctl -tags confonly -ldflags "-s -w"
+env CGO_ENABLED=0 go build -o /home/data/docker-volume/v2ray/bin/v2ctl -tags confonly -ldflags "-s -w"
 
-- [Documentation](https://www.v2fly.org) and [Newcomer's Instructions](https://www.v2fly.org/guide/start.html)
-- Welcome to translate V2Ray documents via [Transifex](https://www.transifex.com/v2fly/public/)
 
-## Packaging Status
+env CGO_ENABLED=0 go build -o /tmp/v2ctl -tags confonly -ldflags "-s -w"
+scp -P 62738 /root/v2ray 183.61.119.41:/usr/bin/v2ray
 
-> If you are willing to package V2Ray for other distros/platforms, please let us know or seek for help via [GitHub issues](https://github.com/v2fly/v2ray-core/issues).
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/v2ray.svg)](https://repology.org/project/v2ray/versions)
+cd /data/ofidc/project/v2ray.com/core/main
+env CGO_ENABLED=0 go build -o /data/test/bin/v2ray -ldflags "-s -w"
 
-## License
 
-[The MIT License (MIT)](https://raw.githubusercontent.com/v2fly/v2ray-core/master/LICENSE)
+# protoc
+cd /home/ti/project/v2ray.com/core
+/home/ti/project/v2ray.com/core/protoc/bin/protoc --proto_path=/home/ti/project/v2ray.com/core --go_out=../../ /home/ti/project/v2ray.com/core/app/policy/config.proto
+/home/ti/project/v2ray.com/core/protoc/bin/protoc --proto_path=/home/ti/project/v2ray.com/core --go_out=../../ /home/ti/project/v2ray.com/core/app/server/config.proto
+/home/ti/project/v2ray.com/core/protoc/bin/protoc --proto_path=/home/ti/project/v2ray.com/core --go_out=../../ /home/ti/project/v2ray.com/core/common/protocol/user.proto
 
-## Credits
 
-This repo relies on the following third-party projects:
 
-- In production:
-  - [gorilla/websocket](https://github.com/gorilla/websocket)
-  - [lucas-clemente/quic-go](https://github.com/lucas-clemente/quic-go)
-  - [pires/go-proxyproto](https://github.com/pires/go-proxyproto)
-  - [seiflotfy/cuckoofilter](https://github.com/seiflotfy/cuckoofilter)
-  - [google/starlark-go](https://github.com/google/starlark-go)
-  - [jhump/protoreflect](https://github.com/jhump/protoreflect)
-  - [inetaf/netaddr](https://github.com/inetaf/netaddr)
+docker stop v2ray
+docker rm v2ray
 
-- For testing only:
-  - [miekg/dns](https://github.com/miekg/dns)
-  - [h12w/socks](https://github.com/h12w/socks)
+docker run -d \
+--name v2ray \
+--privileged     \
+--restart always     \
+--net mynet     \
+--ip 172.18.0.125 \
+--mount type=bind,source=/data/ofidc/docker-volume/v2ray/config.json,target=/etc/v2ray/config.json \
+--mount type=bind,source=/data/ofidc/docker-volume/v2ray/logs,target=/var/log/v2ray \
+--mount type=bind,source=/data/ofidc/docker-volume/v2ray/bin,target=/usr/bin/v2ray \
+--mount type=bind,source=/etc/resolv.docker.conf,target=/etc/resolv.conf \
+v2ray/official
