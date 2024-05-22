@@ -35,7 +35,7 @@
         ]
     },
     "server": {
-        "interval": 20,
+        "interval": 5,
         "tagId": {
             "inbound-http": 2,
             "inbound-socks": 5

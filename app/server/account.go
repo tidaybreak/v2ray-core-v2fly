@@ -55,8 +55,9 @@ type UserInfo struct {
 
 	// 当前：session记录
 	sync.RWMutex
-	ips   []string
-	conns map[string]int32
+	ips      []string
+	conns    map[string]int32
+	sessTick bool
 
 	UserId          int
 	Email           string
@@ -170,6 +171,8 @@ func (u *UserInfo) GetTraffic(trafficReq map[int32][]trafficRequest) {
 	u.lCounter.Lock()
 	defer u.lCounter.Unlock()
 
+	u.Lock()
+	defer u.Unlock()
 	//trafficReq := make(map[int32][]trafficRequest, 0)
 	for nodeId, counter := range u.counter {
 		traffic := trafficRequest{
@@ -185,34 +188,42 @@ func (u *UserInfo) GetTraffic(trafficReq map[int32][]trafficRequest) {
 			counter.trafficLastDown = counter.counterDown.Value()
 		}
 
-		if traffic.TrafficIncUp > 0 || traffic.TrafficIncDown > 0 {
+		if u.sessTick || traffic.TrafficIncUp > 0 || traffic.TrafficIncDown > 0 {
 			if _, found := trafficReq[nodeId]; !found {
 				trafficReq[nodeId] = make([]trafficRequest, 0)
 			}
 
 			traffic.Ips = make([]string, 0)
-			mIps := make(map[string]int)
-			for _, ip := range u.ips {
-				mIps[ip] = 0
-			}
-			for ip, _ := range mIps {
+			//mIps := make(map[string]int32)
+			for ip, _ := range u.conns {
+				//mIps[ip] = c
 				traffic.Ips = append(traffic.Ips, ip)
 			}
+			//if len(u.ips) > 0 {
+			//	u.ips = make([]string, 0)
+			//}
+
+			//for ip, _ := range mIps {
+			//	traffic.Ips = append(traffic.Ips, ip)
+			//}
 			traffic.TcpConnNum = len(u.conns)
+			u.sessTick = false
 
 			trafficReq[nodeId] = append(trafficReq[nodeId], traffic)
 		}
 	}
+
 	//return trafficReq
 }
 
 func (u *UserInfo) NewConn(remStr string) {
 	u.Lock()
-	if len(u.ips) > 10 {
-		u.ips = u.ips[1:len(u.ips)]
-	}
+	//if len(u.ips) > 10 {
+	//	u.ips = u.ips[1:len(u.ips)]
+	//}
 	u.ips = append(u.ips, remStr)
 	_, found := u.conns[remStr]
+	u.sessTick = true
 	if found {
 		newError("rebind conn user:", u.Email).AtError().WriteToLog()
 		u.conns[remStr] += 1
@@ -227,6 +238,7 @@ func (u *UserInfo) CloseConn(remStr string) {
 	u.Lock()
 	_, found := u.conns[remStr]
 	if found {
+		u.sessTick = true
 		delete(u.conns, remStr)
 	} else {
 		newError("unbind conn fail user:", u.Email).AtDebug().WriteToLog()
