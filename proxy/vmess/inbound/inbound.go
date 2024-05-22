@@ -302,7 +302,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection i
 		inbound.User.Tag = Tag
 		inbound.User.URate = URate
 		inbound.User.DRate = DRate
-		h.server.BindConn(inbound.Tag, "ss", inbound.User.Email, connection)
+		h.server.BindConn(inbound.Tag, "vmess", inbound.User.Email, connection)
 	}
 
 	sessionPolicy = h.policyManager.ForLevel(request.User.Level)

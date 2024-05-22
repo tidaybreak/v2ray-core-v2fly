@@ -44,8 +44,8 @@
             "inbound-vmess": 1
         },
         "ssId": 13,
-        "apiUser": "http://proxy.wy2.com/api/get_change_user/?token=youowntoken",
-        "apiTraffic": "http://proxy.wy2.com/api/update_traffic/?token=youowntoken"
+        "apiUser": "http://127.0.0.1:9000/api/get_change_user/?token=youowntoken",
+        "apiTraffic": "http://127.0.0.1:9000/api/update_traffic/?token=youowntoken"
     },
     "inbounds": [
         {
