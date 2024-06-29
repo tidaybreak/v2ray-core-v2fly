@@ -55,7 +55,7 @@
             "settings": {
                 "auth": "password",
                 "accounts": [
-                    {"user": "wengzt2@ofidc.com", "pass": "ti2751231"}
+                    {"user": "wengzt", "pass": "ti2751231"}
                 ],
                 "udp": true,
                 "ip": "121.46.18.120",
@@ -69,6 +69,13 @@
             "port": 1090,
             "protocol": "http",
             "settings": {
+                "auth": "password",
+                "accounts": [
+                    {
+                        "user": "wengzt",
+                        "pass": "ti2751231"
+                    }
+                ]
             },
             "sniffing": {},
             "streamSettings": {

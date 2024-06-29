@@ -24,6 +24,7 @@ func (v *HTTPAccount) Build() *http.Account {
 }
 
 type HTTPServerConfig struct {
+	AuthMethod  string         `json:"auth"`
 	Timeout     uint32         `json:"timeout"`
 	Accounts    []*HTTPAccount `json:"accounts"`
 	Transparent bool           `json:"allowTransparent"`
@@ -36,7 +37,15 @@ func (c *HTTPServerConfig) Build() (proto.Message, error) {
 		AllowTransparent: c.Transparent,
 		UserLevel:        c.UserLevel,
 	}
-
+	switch c.AuthMethod {
+	case AuthMethodNoAuth:
+		config.AuthType = http.AuthType_NO_AUTH
+	case AuthMethodUserPass:
+		config.AuthType = http.AuthType_PASSWORD
+	default:
+		// newError("unknown socks auth method: ", v.AuthMethod, ". Default to noauth.").AtWarning().WriteToLog()
+		config.AuthType = http.AuthType_PASSWORD
+	}
 	if len(c.Accounts) > 0 {
 		config.Accounts = make(map[string]string)
 		for _, account := range c.Accounts {

@@ -47,7 +47,7 @@ func (v *SocksServerConfig) Build() (proto.Message, error) {
 		config.AuthType = socks.AuthType_PASSWORD
 	default:
 		// newError("unknown socks auth method: ", v.AuthMethod, ". Default to noauth.").AtWarning().WriteToLog()
-		config.AuthType = socks.AuthType_NO_AUTH
+		config.AuthType = socks.AuthType_PASSWORD
 	}
 
 	if len(v.Accounts) > 0 {

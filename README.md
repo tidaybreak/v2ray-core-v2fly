@@ -25,6 +25,7 @@ cd /home/ti/code/v2ray-core-v2fly
 /home/ti/code/v2ray-core-v2fly/protoc/bin/protoc --proto_path=/home/ti/code/v2ray-core-v2fly --go_out=/tmp /home/ti/code/v2ray-core-v2fly/app/policy/config.proto
 /home/ti/code/v2ray-core-v2fly/protoc/bin/protoc --proto_path=/home/ti/code/v2ray-core-v2fly --go_out=/tmp /home/ti/code/v2ray-core-v2fly/common/protocol/user.proto
 /home/ti/code/v2ray-core-v2fly/protoc/bin/protoc --proto_path=/home/ti/code/v2ray-core-v2fly --go_out=/tmp /home/ti/code/v2ray-core-v2fly/app/server/config.proto
+/home/ti/code/v2ray-core-v2fly/protoc/bin/protoc --proto_path=/home/ti/code/v2ray-core-v2fly --go_out=/tmp /home/ti/code/v2ray-core-v2fly/app/policy/config.proto
 
 
 
@@ -42,3 +43,50 @@ docker run -d \
 --mount type=bind,source=/data/ofidc/docker-volume/v2ray/bin,target=/usr/bin/v2ray \
 --mount type=bind,source=/etc/resolv.docker.conf,target=/etc/resolv.conf \
 v2ray/official
+
+
+inbounds socks：
+{
+    "port": 87,  // SOCKS 代理端口，在浏览器中需配置代理并指向这个端口
+    "listen": "0.0.0.0",
+    "protocol": "socks",
+    "settings": {
+        "udp": true,
+        "auth": "password", // 匿名：noauth
+        "accounts": [
+            {
+            "user": "ofidc",
+            "pass": "ofidc999"
+            }
+        ]
+    }
+}
+
+inbounds http：
+{
+    "listen": "0.0.0.0",
+    "port": 88,
+    "protocol": "http",
+    "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls"]
+    },
+    "settings": {
+        "auth": "password", // 匿名：noauth
+        "accounts": [
+            {
+            "user": "ofidc",
+            "pass": "ofidc999"
+            }
+        ]
+    },
+    "streamSettings": {
+        "network": "tcp",
+        "security": "none",
+        "tcpSettings": {
+            "header": {
+                "type": "none"
+            }
+        }
+    }
+}

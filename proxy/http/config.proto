@@ -8,6 +8,14 @@ option java_multiple_files = true;
 
 import "common/protocol/server_spec.proto";
 
+// AuthType is the authentication type of Socks proxy.
+enum AuthType {
+  // NO_AUTH is for anounymous authentication.
+  NO_AUTH = 0;
+  // PASSWORD is for username/password authentication.
+  PASSWORD = 1;
+}
+
 message Account {
   string username = 1;
   string password = 2;
@@ -19,6 +27,8 @@ message ServerConfig {
   map<string, string> accounts = 2;
   bool allow_transparent = 3;
   uint32 user_level = 4;
+  AuthType auth_type = 5;
+
 }
 
 // ClientConfig is the protobuf config for HTTP proxy client.

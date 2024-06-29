@@ -120,7 +120,7 @@ func (s *Server) processTCP(ctx context.Context, conn internet.Connection, dispa
 		}
 		return newError("failed to read request").Base(err)
 	}
-	if request.User != nil {
+	if request.User != nil && svrSession.server != nil {
 		inbound.User.Email = request.User.Email
 		if Tag, URate, DRate, err := svrSession.server.Permission(svrSession.inboundTag, request.User.Email); err != nil {
 			return newError("server permission deny").Base(err)

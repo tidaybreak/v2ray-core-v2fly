@@ -114,31 +114,33 @@ Start:
 		return trace
 	}
 
-	if len(s.config.Accounts) > 0 {
+	if s.config.AuthType == AuthType_PASSWORD {
 		user, pass, ok := parseBasicAuth(request.Header.Get("Proxy-Authorization"))
-		if !ok || !s.config.HasAccount(user, pass) {
+		if !ok || user == "" || pass == "" {
 			return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
+		}
+
+		if !s.config.HasAccount(user, pass) {
+			if s.server == nil {
+				return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
+			}
+			err := s.server.CheckNormal(inbound.Tag, user, pass)
+			if !ok || err != nil {
+				newError(err).WriteToLog(session.ExportIDToError(ctx))
+				return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
+			}
+			if Tag, URate, DRate, err := s.server.Permission(inbound.Tag, user); err != nil {
+				return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
+			} else {
+				inbound.User.Tag = Tag
+				inbound.User.URate = URate
+				inbound.User.DRate = DRate
+				inbound.User.Email = user
+				s.server.BindConn(inbound.Tag, "http", inbound.User.Email, conn)
+			}
 		}
 		if inbound != nil {
 			inbound.User.Email = user
-		}
-	}
-
-	if inbound.User.Email == "" {
-		user, pass, ok := parseBasicAuth(request.Header.Get("Proxy-Authorization"))
-		err := s.server.CheckNormal(inbound.Tag, user, pass)
-		if !ok || err != nil {
-			newError(err).WriteToLog(session.ExportIDToError(ctx))
-			return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
-		}
-		if Tag, URate, DRate, err := s.server.Permission(inbound.Tag, user); err != nil {
-			return common.Error2(conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\n\r\n")))
-		} else {
-			inbound.User.Tag = Tag
-			inbound.User.URate = URate
-			inbound.User.DRate = DRate
-			inbound.User.Email = user
-			s.server.BindConn(inbound.Tag, "http", inbound.User.Email, conn)
 		}
 	}
 

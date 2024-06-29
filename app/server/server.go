@@ -407,10 +407,12 @@ func (s *Handler) BindConn(tagInbound, protocol, username string, conn internet.
 
 	addr := conn.RemoteAddr().Network() + ":" + conn.RemoteAddr().String()
 	userInfo, _ := s.userPool.GetUserByEmail(username)
-	if userInfo != nil {
-		userInfo.NewConn(addr)
+	if userInfo == nil {
+		// 本地认证时
+		return nil
 	}
 
+	userInfo.NewConn(addr)
 	switch protocol {
 	case "socks":
 		{
