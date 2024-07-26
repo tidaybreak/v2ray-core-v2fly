@@ -44,86 +44,242 @@
             "inbound-vmess": 1
         },
         "ssId": 13,
-        "apiUser": "http://127.0.0.1:9000/api/get_change_user/?token=youowntoken",
-        "apiTraffic": "http://127.0.0.1:9000/api/update_traffic/?token=youowntoken"
+        "apiUser": "http://proxy.tiham.com/api/get_change_user/?token=youowntoken",
+        "apiTraffic": "http://proxy.tiham.com/api/update_traffic/?token=youowntoken"
     },
-    "inbounds": [
-        {
-            "protocol": "socks",
-            "listen": "0.0.0.0",
-            "port": 1091,
-            "settings": {
-                "auth": "password",
-                "accounts": [
-                    {"user": "wengzt", "pass": "ti2751231"}
-                ],
-                "udp": true,
-                "ip": "121.46.18.120",
-                "userLevel": 0
-            },
-            "tag": "inbound-socks"
-        },
-        {
-            "tag": "inbound-http",
-            "listen": "0.0.0.0",
-            "port": 1090,
-            "protocol": "http",
-            "settings": {
-                "auth": "password",
-                "accounts": [
-                    {
-                        "user": "wengzt",
-                        "pass": "ti2751231"
-                    }
-                ]
-            },
-            "sniffing": {},
-            "streamSettings": {
-                "network": "tcp",
-                "security": "none",
-                "tcpSettings": {
-                    "header": {
-                        "type": "none"
-                    }
-                }
-            }
-        },
+	"inbounds": [{
+		"listen": "0.0.0.0",
+		"port": 1090,
+		"protocol": "http",
+       		"sniffing": {
+         		"enabled": true,
+         		"destOverride": [
+           		"tls"
+         		]
+       		},
+		"settings": {
+			"auth": "password"
+			
+		},
+		"streamSettings": {
+			"network": "tcp",
+			"security": "none",
+			"tcpSettings": {
+				"header": {
+					"type": "none"
+				}
+			}
+		},
+		"tag": "inbound-http"
+	},
+	{
+		"protocol": "socks",
+		"listen": "0.0.0.0",
+		"port": 1091,
+       		"sniffing": {
+         		"enabled": true,
+         		"destOverride": [
+			"http",
+           		"tls"
+         		]
+       		},
+		"settings": {
+			"auth": "password",
+			"udp": true,
+			"ip": "121.46.18.202"
+		},
+		"tag": "inbound-socks"
+	},
         {
             "port": 1092,
             "protocol": "vmess",
+            "sniffing": {
+         		"enabled": true,
+         		"destOverride": [
+           		"tls"
+         		]
+       	},
             "settings": {
                 "clients": [
                     {
                         "id": "27848739-7e62-4138-9fd3-098a63964b7b",
-                        "alterId": 4
+                        "alterId": 0
                     }
                 ]
             },
             "tag": "inbound-vmess"
         },
-        {
-            "tag": "api",
-            "listen": "127.0.0.1",
-            "port": 9091,
-            "protocol": "dokodemo-door",
-            "settings": {
-                "address": "127.0.0.1"
-            }
-        }
-    ],
-    "outbounds": [
-        {
-            "sendThrough": "172.18.0.10",
-            "protocol": "freedom",
-            "tag": "out",
-            "settings": {
-                "domainStrategy": "useip"
-            }
-        }
-    ],
-    "routing": {
-        "rules": [
-        ],
-        "strategy": "rules"
-    }
+	{
+		"tag": "inbound-vmess-ws-tls",
+		"port": 1093,
+		"protocol": "vmess",
+       		"sniffing": {
+         		"enabled": true,
+         		"destOverride": [
+           		"http",
+           		"tls"
+         		]
+       		},
+		"settings": {
+			"clients": [{
+				"id": "27848739-7e62-4138-9fd3-098a63964b6b",
+				"alterId": 4,
+				"email": "xxx@xx.com"
+			}]
+		},
+		"streamSettings": {
+			"network": "ws",
+			"wsSettings": {
+				"path": "/ray"
+			}
+		}
+	},
+	{
+		"listen": "127.0.0.1",
+		"port": 9090,
+		"protocol": "dokodemo-door",
+		"settings": {
+			"address": "127.0.0.1"
+		},
+		"tag": "api"
+	}],
+	"outbounds": [{
+		"sendThrough": "172.18.0.10",
+		"protocol": "freedom",
+		"tag": "out",
+		"settings": {
+			"domainStrategy": "useip"
+		}
+	},
+	{
+		"sendThrough": "172.18.0.10",
+		"protocol": "freedom",
+		"tag": "china-un",
+		"settings": {
+			"domainStrategy": "useip"
+		}
+	},
+	{
+		"sendThrough": "172.18.0.10",
+		"protocol": "freedom",
+		"tag": "china",
+		"settings": {
+			"domainStrategy": "useip"
+		}
+	},
+	{
+		"mux": {
+			"enabled": false,
+			"concurrency": 8
+		},
+		"protocol": "vmess",
+		"streamSettings": {
+			"wsSettings": {
+				"path": "/chat",
+				"headers": {
+					"host": "vau1.0bad.com"
+				}
+			},
+			"tlsSettings": {
+				"serverName": "vau1.0bad.com",
+				"allowInsecure": false
+			},
+			"security": "tls",
+			"network": "ws"
+		},
+		"tag": "vmess",
+		"settings": {
+			"vnext": [{
+				"address": "vau1.0bad.com",
+				"users": [{
+					"id": "927094d3-d678-4763-8591-e240d0bcae87",
+					"alterId": 0,
+					"level": 0,
+					"security": "aes-128-gcm"
+				}],
+				"port": 443
+			}]
+		}
+	},
+	{
+		"protocol": "shadowsocks",
+		"tag": "huanshi",
+		"settings": {
+			"servers": [{
+				"address": "23.91.100.158",
+				"method": "aes-256-gcm",
+				"ota": false,
+				"password": "testpwd",
+				"port": 2728
+			}]
+		}
+	},
+	{
+		"protocol": "shadowsocks",
+		"tag": "japan",
+		"settings": {
+			"servers": [{
+				"address": "202.47.24.150",
+				"method": "aes-256-gcm",
+				"ota": false,
+				"password": "b1mR34nby1q1",
+				"port": 30003
+			}]
+		}
+	},
+	{
+		"protocol": "shadowsocks",
+		"tag": "singapore",
+		"settings": {
+			"servers": [{
+				"address": "103.65.36.174",
+				"method": "aes-256-gcm",
+				"ota": false,
+				"password": "b1mR34nby1q1",
+				"port": 30003
+			}]
+		}
+	},
+	{
+		"protocol": "shadowsocks",
+		"tag": "taiwan",
+		"settings": {
+			"servers": [{
+				"address": "61.29.253.19",
+				"method": "aes-256-gcm",
+				"ota": false,
+				"password": "b1mR34nby1q1",
+				"port": 30003
+			}]
+		}
+	}],
+	"routing": {
+		"rules": [{
+			"type": "field",
+			"outboundTag": "singapore",
+			"domain": ["minecrafteduservices.com","minecraft.net","minecraft-services.net","gemini.google.com", "bard.google.com", "ciciai.com"]
+		},
+                {
+                        "type": "field",
+                        "outboundTag": "taiwan",
+                        "domain": ["livekit.cloud", "openai.com", "chatgpt.com", "bing.com","stripe.com"]
+                },
+                {
+                        "type": "field",
+                        "outboundTag": "china",
+                        "domain": ["ofidc.com"]
+                },
+		{
+			"type": "field",
+			"outboundTag": "china",
+			"user": ["china@ofidc.com"]
+		},
+		{
+			"type": "field",
+			"outboundTag": "china-un",
+			"ip": ["211.94.115.124"]
+		}],
+		"strategy": "rules"
+	}
 }
+

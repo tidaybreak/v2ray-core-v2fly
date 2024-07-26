@@ -45,6 +45,11 @@ docker run -d \
 v2ray/official
 
 
+sniffing  开启sniffing.destOverride.http|tls 会用8.8.8.8来解析，可能解析出来ip不能访问，myip.ipip.net出现过这问题
+http会覆盖变量，配置无效http/server.go:285
+socks5 有效
+vmess 有效
+
 inbounds socks：
 {
     "port": 87,  // SOCKS 代理端口，在浏览器中需配置代理并指向这个端口
@@ -88,5 +93,34 @@ inbounds http：
                 "type": "none"
             }
         }
+    }
+}
+
+
+
+outbounds shadowsocks：
+{
+    "protocol": "shadowsocks",
+    "tag": "huanshi",
+    "settings": {
+            "servers": [{
+                    "address": "23.91.100.158",
+                    "method": "aes-256-gcm",
+                    "ota": false,
+                    "password": "testpwd",
+                    "port": 2728
+            }]
+    }
+}
+
+outbounds vmess：
+{
+    "protocol": "vmess",
+    "settings": {
+        "vnext": [{
+            "address": "172.18.0.10", // 服务器地址，请修改为你自己的服务器 ip 或域名
+            "port": 1092,  // 服务器端口
+            "users": [{ "id": "5105fe80-bbbc-48d2-b662-ec858489d3d9","alterId": 0 }]
+        }]
     }
 }
