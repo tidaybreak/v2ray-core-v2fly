@@ -5,16 +5,14 @@ package quic
 
 import (
 	"context"
-	"sync"
-	"time"
-
-	"github.com/lucas-clemente/quic-go"
-
+	"github.com/quic-go/quic-go"
 	"github.com/v2fly/v2ray-core/v4/common"
 	"github.com/v2fly/v2ray-core/v4/common/net"
 	"github.com/v2fly/v2ray-core/v4/common/task"
 	"github.com/v2fly/v2ray-core/v4/transport/internet"
 	"github.com/v2fly/v2ray-core/v4/transport/internet/tls"
+	"sync"
+	"time"
 )
 
 type connectionContext struct {
@@ -151,10 +149,11 @@ func (s *clientConnections) openConnection(destAddr net.Addr, config *Config, tl
 	}
 
 	quicConfig := &quic.Config{
-		ConnectionIDLength:   12,
+		//ConnectionIDLength:   12,
 		HandshakeIdleTimeout: time.Second * 8,
 		MaxIdleTimeout:       time.Second * 30,
-		KeepAlive:            true,
+		KeepAlivePeriod:      time.Second * 10,
+		//KeepAlive:            true,
 	}
 
 	sysConn, err := wrapSysConn(rawConn.(*net.UDPConn), config)
@@ -162,8 +161,8 @@ func (s *clientConnections) openConnection(destAddr net.Addr, config *Config, tl
 		rawConn.Close()
 		return nil, err
 	}
-
-	conn, err := quic.DialContext(context.Background(), sysConn, destAddr, "", tlsConfig.GetTLSConfig(tls.WithDestination(dest)), quicConfig)
+	conn, err := quic.Dial(context.Background(), sysConn, destAddr, tlsConfig.GetTLSConfig(tls.WithDestination(dest)), quicConfig)
+	//conn, err := quic.Dial(context.Background(), sysConn, destAddr, "", tlsConfig.GetTLSConfig(tls.WithDestination(dest)), quicConfig)
 	if err != nil {
 		sysConn.Close()
 		return nil, err

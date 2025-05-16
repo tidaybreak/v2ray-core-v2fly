@@ -7,14 +7,12 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"errors"
-	"time"
-
-	"github.com/lucas-clemente/quic-go"
-
+	"github.com/quic-go/quic-go"
 	"github.com/v2fly/v2ray-core/v4/common"
 	"github.com/v2fly/v2ray-core/v4/common/buf"
 	"github.com/v2fly/v2ray-core/v4/common/net"
 	"github.com/v2fly/v2ray-core/v4/transport/internet"
+	"time"
 )
 
 type sysConn struct {

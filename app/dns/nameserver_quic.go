@@ -5,15 +5,7 @@ package dns
 
 import (
 	"context"
-	"net/url"
-	"sync"
-	"sync/atomic"
-	"time"
-
-	"github.com/lucas-clemente/quic-go"
-	"golang.org/x/net/dns/dnsmessage"
-	"golang.org/x/net/http2"
-
+	"github.com/quic-go/quic-go"
 	"github.com/v2fly/v2ray-core/v4/common"
 	"github.com/v2fly/v2ray-core/v4/common/buf"
 	"github.com/v2fly/v2ray-core/v4/common/net"
@@ -23,6 +15,12 @@ import (
 	"github.com/v2fly/v2ray-core/v4/common/task"
 	dns_feature "github.com/v2fly/v2ray-core/v4/features/dns"
 	"github.com/v2fly/v2ray-core/v4/transport/internet/tls"
+	"golang.org/x/net/dns/dnsmessage"
+	"golang.org/x/net/http2"
+	"net/url"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // NextProtoDQ - During connection establishment, DNS/QUIC support is indicated
@@ -371,7 +369,7 @@ func (s *QUICNameServer) openConnection(ctx context.Context) (quic.Connection, e
 		HandshakeIdleTimeout: handshakeIdleTimeout,
 	}
 
-	conn, err := quic.DialAddrContext(ctx, s.destination.NetAddr(), tlsConfig.GetTLSConfig(tls.WithNextProto("http/1.1", http2.NextProtoTLS, NextProtoDQ)), quicConfig)
+	conn, err := quic.DialAddr(ctx, s.destination.NetAddr(), tlsConfig.GetTLSConfig(tls.WithNextProto("http/1.1", http2.NextProtoTLS, NextProtoDQ)), quicConfig)
 	if err != nil {
 		return nil, err
 	}

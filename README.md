@@ -44,11 +44,21 @@ docker run -d \
 --mount type=bind,source=/etc/resolv.docker.conf,target=/etc/resolv.conf \
 v2ray/official
 
+curl -x socks5://s51:socks888@127.0.0.1:8081 myip.ipip.net
+curl -v --socks5 127.0.0.1:8081 --socks5-protocols udp "udp://example.com"
 
-sniffing  开启sniffing.destOverride.http|tls 会用8.8.8.8来解析，可能解析出来ip不能访问，myip.ipip.net出现过这问题
-http会覆盖变量，配置无效http/server.go:285
-socks5 有效
-vmess 有效
+sniffing
+开启sniffing.destOverride.http|tls 用域名覆盖变量(/app/dispatcher/default.go:Dispatch:shouldOverride)，后续用8.8.8.8来解析(proxy/freedom/freedom.go:Process) 
+可能解析出来ip不能访问，myip.ipip.net出现过这问题
+"sniffing": {
+    "enabled": true,
+    "destOverride": ["http","tls"]
+},
+    http 会覆盖变量，配置无效http/server.go:285  自带域名进来的,所以走国内不要用http代理
+    socks5 有效
+    vmess 有效
+
+
 
 inbounds socks：
 {

@@ -131,10 +131,15 @@ func (s *ServerSession) auth5(nMethod byte, reader io.Reader, writer io.Writer) 
 
 		if !s.config.HasAccount(username, password) {
 			if s.server != nil {
+				// 中心验证
 				if err := s.server.CheckNormal(s.inboundTag, username, password); err != nil {
 					writeSocks5AuthenticationResponse(writer, 0x01, 0xFF) // nolint: errcheck
 					return "", newError("invalid username:", username, " or password:", password)
 				}
+			} else {
+				// 没中心验证且本地验证失败
+				writeSocks5AuthenticationResponse(writer, 0x01, 0xFF) // nolint: errcheck
+				return "", newError("invalid username:", username, " or password:", password)
 			}
 		}
 
