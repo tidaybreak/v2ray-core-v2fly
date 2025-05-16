@@ -40,7 +40,7 @@ require (
 	github.com/xtaci/smux v1.5.15 // indirect
 	go.uber.org/mock v0.5.0 // indirect
 	go4.org/intern v0.0.0-20220301175310-a089fc204883 // indirect
-	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
 	golang.org/x/mod v0.18.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/tools v0.22.0 // indirect

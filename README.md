@@ -1,5 +1,5 @@
-export PATH=$PATH:/home/ti/dev_data/go1.17/bin
-export GOROOT=/home/ti/dev_data/go1.17
+export PATH=$PATH:/home/ti/dev_data/go1.24.3/bin
+export GOROOT=/home/ti/dev_data/go1.24.3
 export GOPATH=/data/ofidc/gopath
 
 cd /home/ti/code/v2ray-core-v2fly/main
